@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile les leçons Markdown de `content/` en un seul fichier `js/course-data.js`.
+"""Compile les leçons Markdown de `content/<langue>/` en un seul fichier `js/course-data.js`.
 
 Usage :  python3 build.py
 
@@ -182,15 +182,19 @@ def parse_lesson(path: Path) -> dict:
     }
 
 
-def main() -> int:
-    course = json.loads((CONTENT / "course.json").read_text(encoding="utf-8"))
+LANGS = ("fr", "en")  # le français est la langue de référence
+
+
+def build_course(lang: str) -> dict:
+    root = CONTENT / lang
+    course = json.loads((root / "course.json").read_text(encoding="utf-8"))
     seen: set[str] = set()
     kept = []
     for module in course["modules"]:
-        folder = CONTENT / module.pop("dir")
+        folder = root / module.pop("dir")
         files = sorted(folder.glob("*.md"))
         if not files:
-            print(f"Attention : {folder.name} ne contient aucune leçon, chapitre ignoré.", file=sys.stderr)
+            print(f"Attention [{lang}] : {folder.name} ne contient aucune leçon, chapitre ignoré.", file=sys.stderr)
             continue
         kept.append(module)
         module["lessons"] = []
@@ -201,20 +205,38 @@ def main() -> int:
             seen.add(lesson["id"])
             module["lessons"].append(lesson)
     course["modules"] = kept
+    course["pages"] = {name: (root / file).read_text(encoding="utf-8") for name, file in course.get("pages", {}).items()}
+    return course
 
-    extras = {}
-    for name, file in course.pop("pages", {}).items():
-        extras[name] = (CONTENT / file).read_text(encoding="utf-8")
-    course["pages"] = extras
 
-    payload = json.dumps(course, ensure_ascii=False, indent=None, separators=(",", ":"))
+def structure(course: dict) -> list:
+    """Squelette comparable entre langues : chapitres, leçons, nombre d'exercices."""
+    return [
+        (m["id"], [(l["id"], sum(1 for s in l["steps"] for b in s if b["t"] == "exercise")) for l in m["lessons"]])
+        for m in course["modules"]
+    ]
+
+
+def main() -> int:
+    courses = {lang: build_course(lang) for lang in LANGS if (CONTENT / lang / "course.json").exists()}
+    ref = structure(courses["fr"])
+    for lang, course in courses.items():
+        if lang != "fr" and structure(course) != ref:
+            raise BuildError(
+                f"La version '{lang}' n'a pas la même structure que la version française "
+                "(mêmes chapitres, mêmes identifiants de leçons, même nombre d'exercices par leçon)."
+            )
+
+    payload = json.dumps(courses, ensure_ascii=False, indent=None, separators=(",", ":"))
     OUT.write_text(
         "// Fichier généré par build.py — ne pas modifier à la main.\n"
-        f"window.COURSE = {payload};\n",
+        f"window.COURSES = {payload};\n",
         encoding="utf-8",
     )
-    n = sum(len(m["lessons"]) for m in course["modules"])
-    print(f"OK : {len(course['modules'])} modules, {n} leçons -> {OUT.relative_to(ROOT)}")
+    for lang, course in courses.items():
+        n = sum(len(m["lessons"]) for m in course["modules"])
+        print(f"OK [{lang}] : {len(course['modules'])} modules, {n} leçons")
+    print(f"-> {OUT.relative_to(ROOT)}")
     return 0
 
 

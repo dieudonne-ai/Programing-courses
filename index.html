@@ -30,6 +30,10 @@
     </nav>
     <div class="topbar-right">
       <span id="hdr-py" class="py-state" hidden></span>
+      <div id="lang-switch" class="lang-switch" role="group" aria-label="Langue du site">
+        <button type="button" data-lang="fr" lang="fr">FR</button>
+        <button type="button" data-lang="en" lang="en">EN</button>
+      </div>
       <a id="hdr-streak" class="pill" href="#/parcours"></a>
       <a id="hdr-xp" class="pill pill-xp" href="#/parcours"></a>
       <button id="theme-toggle" class="icon-btn" type="button" aria-label="Changer le thème clair ou sombre">
@@ -40,13 +44,14 @@
 
   <div id="app" tabindex="-1"></div>
 
-  <noscript><p style="padding:2rem">Ce cours a besoin de JavaScript pour fonctionner.</p></noscript>
+  <noscript><p style="padding:2rem">Ce cours a besoin de JavaScript pour fonctionner. / This course needs JavaScript to work.</p></noscript>
 
   <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/runmode/runmode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/course-data.js"></script>
   <script src="js/python.js"></script>
   <script src="js/widgets.js"></script>

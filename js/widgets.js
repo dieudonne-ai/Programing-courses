@@ -23,15 +23,16 @@ window.el = function el(tag, attrs, ...children) {
 
 window.Widgets = (function () {
   const el = window.el;
+  const t = (k, v) => window.I18N.t(k, v);
 
   /* ---------------- Robot à programmer ---------------- */
   const DIRS = ["N", "E", "S", "W"];
   const DELTA = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
   const ANGLE = { N: -90, E: 0, S: 90, W: 180 };
   const CMD = {
-    F: { label: "Avancer", icon: "⬆" },
-    L: { label: "Tourner à gauche", icon: "↺" },
-    R: { label: "Tourner à droite", icon: "↻" },
+    F: { label: t("wCmdF"), icon: "⬆" },
+    L: { label: t("wCmdL"), icon: "↺" },
+    R: { label: t("wCmdR"), icon: "↻" },
   };
 
   function robotSVG() {
@@ -47,7 +48,7 @@ window.Widgets = (function () {
 
     const status = el("div", { class: "w-status", role: "status" });
     const board = el("div", { class: "robot-board" });
-    const prog = el("div", { class: "robot-program", "aria-label": "Programme du robot" });
+    const prog = el("div", { class: "robot-program", "aria-label": t("wProgramAria") });
     const levelLabel = el("div", { class: "robot-level" });
     const hint = el("p", { class: "robot-hint" });
     const buttons = el("div", { class: "robot-cmds" },
@@ -55,16 +56,16 @@ window.Widgets = (function () {
         el("button", { class: "chip-btn", type: "button", onclick: () => add(k) }, el("span", { class: "cmd-ico" }, c.icon), c.label)
       )
     );
-    const runBtn = el("button", { class: "btn btn-primary", type: "button", onclick: run }, "▶ Lancer le robot");
-    const clearBtn = el("button", { class: "btn btn-ghost", type: "button", onclick: () => { program = []; drawProgram(); reset(); } }, "Effacer");
+    const runBtn = el("button", { class: "btn btn-primary", type: "button", onclick: run }, t("wLaunch"));
+    const clearBtn = el("button", { class: "btn btn-ghost", type: "button", onclick: () => { program = []; drawProgram(); reset(); } }, t("wClear"));
 
     root.append(
       el("div", { class: "robot" },
         el("div", { class: "robot-left" }, levelLabel, board, hint),
         el("div", { class: "robot-right" },
-          el("p", { class: "w-label" }, "Instructions disponibles"),
+          el("p", { class: "w-label" }, t("wAvailable")),
           buttons,
-          el("p", { class: "w-label" }, "Ton programme"),
+          el("p", { class: "w-label" }, t("wYourProgram")),
           prog,
           el("div", { class: "row-gap" }, runBtn, clearBtn),
           status
@@ -90,8 +91,8 @@ window.Widgets = (function () {
       board.style.maxWidth = grid[0].length * 76 + "px";
       grid.forEach((row, y) => row.forEach((c, x) => {
         const cell = el("div", { class: "cell" + (c === "#" ? " wall" : "") });
-        if (c === "G") cell.append(el("span", { class: "goal", title: "Arrivée" }, "☕"));
-        if (c === "#") cell.append(el("span", { class: "rock", "aria-label": "obstacle" }, "🪨"));
+        if (c === "G") cell.append(el("span", { class: "goal", title: t("wGoal") }, "☕"));
+        if (c === "#") cell.append(el("span", { class: "rock", "aria-label": t("wRock") }, "🪨"));
         board.append(cell);
       }));
       robotEl = el("div", { class: "robot-bot", html: robotSVG() });
@@ -110,14 +111,14 @@ window.Widgets = (function () {
 
     function drawProgram(active) {
       prog.innerHTML = "";
-      if (!program.length) prog.append(el("span", { class: "muted" }, "Clique sur les instructions pour les ajouter ici."));
+      if (!program.length) prog.append(el("span", { class: "muted" }, t("wEmptyProgram")));
       program.forEach((p, i) => {
         const chip = el("span", { class: "prog-chip" + (i === active ? " active" : "") },
           el("span", { class: "num" }, i + 1), CMD[p.cmd].icon + " " + CMD[p.cmd].label);
         if (loops) {
-          chip.append(el("button", { class: "rep", type: "button", title: "Répéter cette instruction", onclick: () => { p.n = (p.n % 5) + 1; drawProgram(); } }, "×" + p.n));
+          chip.append(el("button", { class: "rep", type: "button", title: t("wRepeat"), onclick: () => { p.n = (p.n % 5) + 1; drawProgram(); } }, "×" + p.n));
         }
-        chip.append(el("button", { class: "del", type: "button", "aria-label": "Supprimer", onclick: () => { program.splice(i, 1); drawProgram(); } }, "✕"));
+        chip.append(el("button", { class: "del", type: "button", "aria-label": t("wDelete"), onclick: () => { program.splice(i, 1); drawProgram(); } }, "✕"));
         prog.append(chip);
       });
     }
@@ -131,7 +132,7 @@ window.Widgets = (function () {
     function setLevel() {
       const L = levels[lv];
       parse();
-      levelLabel.textContent = `Niveau ${lv + 1} sur ${levels.length}` + (L.maxBlocks ? ` : ${L.maxBlocks} blocs maximum` : "");
+      levelLabel.textContent = t("wLevel", { n: lv + 1, total: levels.length }) + (L.maxBlocks ? t("wMaxBlocks", { n: L.maxBlocks }) : "");
       hint.innerHTML = L.hint ? window.mdInline(L.hint) : "";
       program = [];
       drawBoard();
@@ -146,15 +147,15 @@ window.Widgets = (function () {
     const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
     async function run() {
-      if (running || !program.length) { if (!program.length) say("Ajoute d'abord des instructions.", "bad"); return; }
+      if (running || !program.length) { if (!program.length) say(t("wAddFirst"), "bad"); return; }
       const L = levels[lv];
       if (L.maxBlocks && program.length > L.maxBlocks) {
-        say(`Ton programme a ${program.length} blocs. Fais-le en ${L.maxBlocks} blocs maximum en utilisant les répétitions (×2, ×3…).`, "bad");
+        say(t("wTooMany", { n: program.length, max: L.maxBlocks }), "bad");
         return;
       }
       running = true;
       reset();
-      say("Le robot exécute ton programme…");
+      say(t("wRunning"));
       await wait(250);
       for (let i = 0; i < program.length; i++) {
         drawProgram(i);
@@ -168,7 +169,7 @@ window.Widgets = (function () {
               robotEl.classList.add("bump");
               await wait(400);
               robotEl.classList.remove("bump");
-              say(`Boum ! À l'instruction ${i + 1}, le robot fonce dans un obstacle. L'ordinateur fait exactement ce que tu dis, même si c'est une mauvaise idée.`, "bad");
+              say(t("wBump", { i: i + 1 }), "bad");
               running = false;
               return;
             }
@@ -183,16 +184,16 @@ window.Widgets = (function () {
       if (pos[0] === goal[0] && pos[1] === goal[1]) {
         robotEl.classList.add("win");
         if (lv < levels.length - 1) {
-          say("Bravo, le robot a son café ! Niveau suivant…", "good");
+          say(t("wNextLevel"), "good");
           await wait(1300);
           lv++;
           setLevel();
         } else {
-          say("Tous les niveaux sont réussis. Tu viens d'écrire tes premiers programmes !", "good");
+          say(t("wAllLevels"), "good");
           done && done();
         }
       } else {
-        say("Le programme est fini, mais le robot n'est pas sur la tasse de café. Corrige les instructions et relance.", "bad");
+        say(t("wNotThere"), "bad");
       }
     }
 
@@ -224,8 +225,8 @@ window.Widgets = (function () {
           el("span", { class: "grip", "aria-hidden": "true" }, "⋮⋮"),
           el("span", { class: "order-text", html: window.mdInline(it.t) }),
           el("span", { class: "order-btns" },
-            el("button", { type: "button", class: "icon-btn", "aria-label": "Monter", disabled: k === 0 || solved, onclick: () => move(k, k - 1) }, "↑"),
-            el("button", { type: "button", class: "icon-btn", "aria-label": "Descendre", disabled: k === items.length - 1 || solved, onclick: () => move(k, k + 1) }, "↓")
+            el("button", { type: "button", class: "icon-btn", "aria-label": t("wUp"), disabled: k === 0 || solved, onclick: () => move(k, k - 1) }, "↑"),
+            el("button", { type: "button", class: "icon-btn", "aria-label": t("wDown"), disabled: k === items.length - 1 || solved, onclick: () => move(k, k + 1) }, "↓")
           )
         );
         li.addEventListener("dragstart", () => { dragFrom = k; li.classList.add("dragging"); });
@@ -244,13 +245,13 @@ window.Widgets = (function () {
         draw(true);
         check.disabled = true;
         status.className = "w-status good";
-        status.textContent = cfg.success || "Parfait ! C'est exactement ça, un algorithme : des étapes précises, dans le bon ordre.";
+        status.textContent = cfg.success || t("wOrderOk");
         done && done();
       } else {
         status.className = "w-status bad";
-        status.textContent = `${good} étape(s) sur ${items.length} à la bonne place. Les étapes en rouge sont mal placées.`;
+        status.textContent = t("wOrderBad", { good, n: items.length });
       }
-    } }, "Vérifier l'ordre");
+    } }, t("wCheckOrder"));
 
     root.append(el("div", { class: "order" }, cfg.prompt ? el("p", { class: "w-label", html: window.mdInline(cfg.prompt) }) : null, list, el("div", { class: "row-gap" }, check), status));
     draw();
@@ -279,20 +280,20 @@ window.Widgets = (function () {
       sum.innerHTML = "";
       sum.append(
         el("span", { class: "mono" }, bits.join("")),
-        el("span", { class: "muted" }, " en binaire = "),
+        el("span", { class: "muted" }, t("wInBinary")),
         el("span", { class: "mono" }, parts.length ? parts.join(" + ") + " = " : ""),
         el("strong", { class: "big-num" }, total),
-        cfg.showChar !== false && ch ? el("span", { class: "muted" }, " = la lettre ", el("strong", { class: "big-num" }, `« ${ch} »`)) : null
+        cfg.showChar !== false && ch ? el("span", { class: "muted" }, t("wTheLetter"), el("strong", { class: "big-num" }, t("wQuote", { c: ch }))) : null
       );
       if (target !== undefined && !finished) {
         if (total === target) {
           finished = true;
           status.className = "w-status good";
-          status.textContent = cfg.success || `Bravo : ${bits.join("")} vaut bien ${target} !`;
+          status.textContent = cfg.success || t("wBinaryOk", { bits: bits.join(""), target });
           done && done();
         } else {
           status.className = "w-status";
-          status.textContent = `Objectif : allume les bons interrupteurs pour obtenir ${target}.`;
+          status.textContent = t("wBinaryGoal", { target });
         }
       }
     }
@@ -331,8 +332,8 @@ window.Widgets = (function () {
     }
 
     root.append(el("div", { class: "cond" },
-      el("label", { class: "cond-slider" }, el("span", null, cfg.label || "Change la valeur :"), slider, label),
-      el("div", { class: "cond-grid" }, code, el("div", null, el("p", { class: "w-label" }, "Ce que le programme affiche"), out))
+      el("label", { class: "cond-slider" }, el("span", null, cfg.label || t("wChangeValue")), slider, label),
+      el("div", { class: "cond-grid" }, code, el("div", null, el("p", { class: "w-label" }, t("wProgramShows")), out))
     ));
     draw();
   }
@@ -347,8 +348,8 @@ window.Widgets = (function () {
     const outEl = el("pre", { class: "step-out mono" });
     const note = el("p", { class: "step-note" });
     const counter = el("span", { class: "muted" });
-    const prev = el("button", { type: "button", class: "btn btn-ghost", onclick: () => { if (k > 0) { k--; draw(); } } }, "Étape précédente");
-    const next = el("button", { type: "button", class: "btn btn-primary", onclick: () => { if (k < steps.length - 1) { k++; draw(true); } else { k = 0; draw(); } } }, "Étape suivante");
+    const prev = el("button", { type: "button", class: "btn btn-ghost", onclick: () => { if (k > 0) { k--; draw(); } } }, t("wPrevStep"));
+    const next = el("button", { type: "button", class: "btn btn-primary", onclick: () => { if (k < steps.length - 1) { k++; draw(true); } else { k = 0; draw(); } } }, t("wNextStep"));
     let prevVars = {};
 
     function draw(animate) {
@@ -358,7 +359,7 @@ window.Widgets = (function () {
       varsEl.innerHTML = "";
       const vars = s.vars || {};
       const names = Object.keys(vars);
-      if (!names.length) varsEl.append(el("span", { class: "muted" }, "La mémoire est vide pour l'instant."));
+      if (!names.length) varsEl.append(el("span", { class: "muted" }, t("wMemoryEmpty")));
       names.forEach((name) => {
         const changed = animate && prevVars[name] !== vars[name];
         varsEl.append(el("div", { class: "var-box" + (changed ? " changed" : "") }, el("span", { class: "var-name" }, name), el("span", { class: "var-val mono" }, vars[name])));
@@ -366,15 +367,15 @@ window.Widgets = (function () {
       prevVars = { ...vars };
       outEl.textContent = s.out || "";
       note.innerHTML = s.note ? window.mdInline(s.note) : "";
-      counter.textContent = `Étape ${k + 1} sur ${steps.length}`;
+      counter.textContent = t("wStepOf", { k: k + 1, n: steps.length });
       prev.disabled = k === 0;
-      next.textContent = k === steps.length - 1 ? "Recommencer" : "Étape suivante";
+      next.textContent = k === steps.length - 1 ? t("wRestart") : t("wNextStep");
     }
 
     root.append(el("div", { class: "stepper" },
       el("div", { class: "stepper-grid" },
-        el("div", null, el("p", { class: "w-label" }, "Le code (la ligne surlignée est en cours)"), codeEl),
-        el("div", null, el("p", { class: "w-label" }, "La mémoire de l'ordinateur"), varsEl, el("p", { class: "w-label" }, "Ce qui s'affiche"), outEl)
+        el("div", null, el("p", { class: "w-label" }, t("wCodeLabel")), codeEl),
+        el("div", null, el("p", { class: "w-label" }, t("wMemory")), varsEl, el("p", { class: "w-label" }, t("wDisplayed")), outEl)
       ),
       note,
       el("div", { class: "row-gap" }, prev, next, counter)
@@ -404,7 +405,7 @@ window.Widgets = (function () {
   return {
     render(name, root, config, done) {
       const fn = registry[name];
-      if (!fn) { root.append(el("p", { class: "muted" }, `Widget inconnu : ${name}`)); return false; }
+      if (!fn) { root.append(el("p", { class: "muted" }, t("wUnknown", { name }))); return false; }
       fn(root, config || {}, done);
       return GATED.has(name) || (name === "binary" && config && config.target !== undefined);
     },

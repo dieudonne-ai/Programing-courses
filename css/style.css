@@ -169,6 +169,11 @@ button { font: inherit; color: inherit; }
 .nav a:hover { color: var(--ink); background: var(--blue-wash); }
 .nav a[aria-current="page"] { color: var(--ink); background: linear-gradient(transparent 58%, var(--hl) 58%); border-radius: 0; }
 .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.lang-switch { display: inline-flex; border: 1.5px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.lang-switch button { border: 0; background: none; padding: 5px 9px; font-size: 0.8125rem; font-weight: 700; color: var(--ink-soft); cursor: pointer; }
+.lang-switch button + button { border-left: 1.5px solid var(--line); }
+.lang-switch button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.lang-switch button:hover:not([aria-pressed="true"]) { color: var(--blue); }
 .pill { text-decoration: none; color: var(--ink); background: var(--surface); border: 1.5px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 0.875rem; font-weight: 700; white-space: nowrap; }
 .pill-xp { border-color: var(--blue); color: var(--blue); }
 .py-state { font-size: 0.8125rem; color: var(--ink-soft); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
@@ -221,7 +226,8 @@ button { font: inherit; color: inherit; }
 .toc-dots { border-bottom: 2px dotted var(--line); align-self: center; min-width: 24px; }
 .toc-meta { color: var(--ink-soft); font-size: 0.875rem; white-space: nowrap; }
 
-.outcome { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: center; }
+.outcome { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: center; }
+.outcome > *, .hero > * { min-width: 0; }
 .outcome-chart { margin: 0; background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 20px 16px 12px; box-shadow: var(--shadow); }
 .outcome-chart svg { width: 100%; height: auto; display: block; }
 .ch-lbl, .ch-val { font-family: var(--f-body); font-size: 12px; fill: var(--ink-soft); }
@@ -605,7 +611,7 @@ button { font: inherit; color: inherit; }
 /* ---------- Responsive ---------- */
 @media (max-width: 1000px) {
   .hero { grid-template-columns: 1fr; gap: 40px; padding-top: 48px; }
-  .outcome { grid-template-columns: 1fr; }
+  .outcome { grid-template-columns: minmax(0, 1fr); }
   .how-grid { grid-template-columns: 1fr 1fr; }
   .lesson-layout { grid-template-columns: minmax(0, 1fr); }
   .toc { position: fixed; top: 0; left: 0; bottom: 0; z-index: 50; width: min(320px, 86vw); max-height: none; background: var(--paper); border-right: 1.5px solid var(--line); transform: translateX(-105%); transition: transform 0.25s ease; box-shadow: var(--shadow); }

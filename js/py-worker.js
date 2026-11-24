@@ -39,6 +39,22 @@ from pyodide.code import eval_code_async
 
 _NAMESPACES = {}
 _inputs = []
+_LANG = "fr"
+_MSG = {
+    "fr": {
+        "eof": "input() attend une valeur : écris-la dans la case « Entrées » sous l'éditeur (une valeur par ligne).",
+        "notyet": "Ce n'est pas encore tout à fait ça.",
+        "runs": "Ton code tourne, mais il ne fait pas encore ce qui est demandé",
+    },
+    "en": {
+        "eof": "input() is waiting for a value: type it in the \"Inputs\" box below the editor (one value per line).",
+        "notyet": "Not quite there yet.",
+        "runs": "Your code runs, but it doesn't do what is asked yet",
+    },
+}
+
+def _m(key):
+    return _MSG.get(_LANG, _MSG["fr"])[key]
 
 class _Writer:
     def __init__(self):
@@ -57,7 +73,7 @@ def _input(prompt=""):
     if prompt:
         sys.stdout.write(str(prompt))
     if not _inputs:
-        raise EOFError("input() attend une valeur : écris-la dans la case « Entrées » sous l'éditeur (une valeur par ligne).")
+        raise EOFError(_m("eof"))
     value = _inputs.pop(0)
     sys.stdout.write(value + "\n")
     return value
@@ -134,6 +150,10 @@ async def _execute(code, key, inputs, fresh, figs=True):
     res["stdout"] = "".join(w.parts)
     return res, ns
 
+def _set_lang(lang):
+    global _LANG
+    _LANG = lang if lang in _MSG else "fr"
+
 async def _run_json(code, key, inputs_json, fresh):
     res, _ = await _execute(code, key, json.loads(inputs_json), fresh)
     return json.dumps(res)
@@ -150,9 +170,9 @@ async def _check_json(code, check, key, inputs_json):
             exec(compile(check, "<check>", "exec"), ns)
             res["passed"] = True
         except AssertionError as e:
-            res["checkMsg"] = str(e) or "Ce n'est pas encore tout à fait ça."
+            res["checkMsg"] = str(e) or _m("notyet")
         except Exception as e:
-            res["checkMsg"] = "Ton code tourne, mais il ne fait pas encore ce qui est demandé (" + type(e).__name__ + " : " + str(e) + ")."
+            res["checkMsg"] = _m("runs") + " (" + type(e).__name__ + ": " + str(e) + ")."
         finally:
             sys.stdout, sys.stderr = old
     try:
@@ -164,10 +184,17 @@ async def _check_json(code, check, key, inputs_json):
 def _reset(key):
     _NAMESPACES.pop(key, None)
 
-# ---------- Jeux de données des leçons ----------
+# ---------- Jeux de données des leçons (mêmes chiffres en français et en anglais) ----------
+def _write_csv(name, header, rows):
+    with open(name, "w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(header)
+        w.writerows(rows)
+
 def _make_datasets():
     r = random.Random(2024)
     villes = ["Kinshasa", "Abidjan", "Dakar", "Paris", "Montréal"]
+    city_en = {"Montréal": "Montreal"}
     poids = [1.3, 1.1, 1.0, 0.9, 0.8]
     produits = [
         ("Espresso", "Boisson", 2.5), ("Cappuccino", "Boisson", 3.5),
@@ -175,7 +202,9 @@ def _make_datasets():
         ("Croissant", "Viennoiserie", 1.8), ("Beignet", "Viennoiserie", 1.0),
         ("Sandwich", "Snack", 5.0),
     ]
-    rows = []
+    prod_en = {"Thé à la menthe": "Mint tea", "Jus de bissap": "Bissap juice", "Beignet": "Doughnut"}
+    cat_en = {"Boisson": "Drink", "Viennoiserie": "Pastry", "Snack": "Snack"}
+    rows, rows_en = [], []
     d = datetime.date(2024, 1, 1)
     while d.year == 2024:
         for _ in range(r.randint(1, 3)):
@@ -186,42 +215,50 @@ def _make_datasets():
                 saison *= 1.5
             q = max(1, int(r.gauss(6, 3) * saison))
             rows.append([d.isoformat(), ville, nom, cat, q, prix])
+            rows_en.append([d.isoformat(), city_en.get(ville, ville), prod_en.get(nom, nom), cat_en[cat], q, prix])
         d += datetime.timedelta(days=1)
-    with open("ventes.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        w.writerow(["date", "ville", "produit", "categorie", "quantite", "prix_unitaire"])
-        w.writerows(rows)
+    _write_csv("ventes.csv", ["date", "ville", "produit", "categorie", "quantite", "prix_unitaire"], rows)
+    _write_csv("sales.csv", ["date", "city", "product", "category", "quantity", "unit_price"], rows_en)
 
     noms = ["Awa", "Moussa", "Fatou", "Kofi", "Amina", "Jean", "Marie", "Lucas", "Chloé", "Ibrahim",
             "Grace", "Patrick", "Aïcha", "Youssef", "Nadia", "Samuel", "Esther", "Olivier", "Mariam", "David",
             "Sarah", "Joël", "Ruth", "Didier", "Inès", "Hugo", "Léa", "Bakary", "Mamadou", "Kevin",
             "Christelle", "Bénédicte", "Arsène", "Fabrice", "Rachel", "Josué", "Divine", "Prince", "Gloire", "Merveille"]
-    with open("etudiants.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        w.writerow(["nom", "age", "ville", "heures_etude", "note_math", "note_python"])
-        for nom in noms:
-            h = r.randint(1, 20)
-            nm = round(min(20, max(0, r.gauss(11, 3.5))), 1)
-            npy = round(min(20, max(0, 4 + h * 0.7 + r.gauss(0, 2))), 1)
-            w.writerow([nom, r.randint(18, 30), r.choice(villes), h, nm, npy])
+    etu, etu_en = [], []
+    for nom in noms:
+        h = r.randint(1, 20)
+        nm = round(min(20, max(0, r.gauss(11, 3.5))), 1)
+        npy = round(min(20, max(0, 4 + h * 0.7 + r.gauss(0, 2))), 1)
+        age = r.randint(18, 30)
+        ville = r.choice(villes)
+        etu.append([nom, age, ville, h, nm, npy])
+        etu_en.append([nom, age, city_en.get(ville, ville), h, nm, npy])
+    _write_csv("etudiants.csv", ["nom", "age", "ville", "heures_etude", "note_math", "note_python"], etu)
+    _write_csv("students.csv", ["name", "age", "city", "study_hours", "math_grade", "python_grade"], etu_en)
 
     variantes = {"Kinshasa": ["Kinshasa", " kinshasa", "KINSHASA"], "Dakar": ["Dakar", "dakar "],
                  "Abidjan": ["Abidjan", "abidjan"], "Paris": ["Paris"], "Montréal": ["Montréal", "montréal "]}
-    clients = []
+    variants_en = {"Montréal": ["Montreal", "montreal "]}
+    clients, clients_en = [], []
     for i in range(1, 61):
         ville = r.choice(list(variantes))
         age = "" if r.random() < 0.12 else r.randint(18, 70)
         dep = "" if r.random() < 0.1 else round(r.uniform(5, 400), 2)
         ins = (datetime.date(2023, 1, 1) + datetime.timedelta(days=r.randint(0, 600))).isoformat()
-        clients.append([i, r.choice(noms), r.choice(variantes[ville]), age, dep, ins])
-    clients += [clients[4], clients[17], clients[33]]
-    with open("clients.csv", "w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f)
-        w.writerow(["id", "nom", "ville", "age", "depense", "inscription"])
-        w.writerows(clients)
+        nom = r.choice(noms)
+        k = r.randrange(len(variantes[ville]))
+        clients.append([i, nom, variantes[ville][k], age, dep, ins])
+        clients_en.append([i, nom, variants_en.get(ville, variantes[ville])[k], age, dep, ins])
+    for k in (4, 17, 33):
+        clients.append(clients[k])
+        clients_en.append(clients_en[k])
+    _write_csv("clients.csv", ["id", "nom", "ville", "age", "depense", "inscription"], clients)
+    _write_csv("customers.csv", ["id", "name", "city", "age", "spending", "signup_date"], clients_en)
 
     with open("courses.txt", "w", encoding="utf-8") as f:
         f.write("riz\nhuile\ntomates\noignons\npain\nlait\ncafé\n")
+    with open("groceries.txt", "w", encoding="utf-8") as f:
+        f.write("rice\noil\ntomatoes\nonions\nbread\nmilk\ncoffee\n")
 
 _make_datasets()
 `;
@@ -236,11 +273,16 @@ const ready = init()
   .then(() => self.postMessage({ type: "ready" }))
   .catch((err) => self.postMessage({ type: "fatal", message: String(err) }));
 
+let lang = "fr";
+
 async function loadPackages(code, id) {
   const imports = pyodide.pyimport("pyodide.code").find_imports(code).toJs();
   const needed = imports.filter((m) => ["numpy", "pandas", "matplotlib"].includes(m) && !pyodide.loadedPackages[m]);
   if (needed.length) {
-    self.postMessage({ type: "status", id, text: "Chargement de " + needed.join(", ") + " (la première fois prend quelques secondes)…" });
+    const text = lang === "en"
+      ? "Loading " + needed.join(", ") + " (the first time takes a few seconds)…"
+      : "Chargement de " + needed.join(", ") + " (la première fois prend quelques secondes)…";
+    self.postMessage({ type: "status", id, text });
     await pyodide.loadPackagesFromImports(code);
   }
 }
@@ -260,6 +302,8 @@ self.onmessage = async (event) => {
       return;
     }
     if (m.type === "run" || m.type === "check") {
+      lang = m.lang || "fr";
+      pyodide.globals.get("_set_lang")(lang);
       await loadPackages(m.code + "\n" + (m.check || ""), m.id);
       currentId = m.id;
       outBuf = "";
@@ -279,6 +323,6 @@ self.onmessage = async (event) => {
     }
   } catch (err) {
     currentId = null;
-    self.postMessage({ type: "done", id: m.id, result: { ok: false, stdout: "", images: [], error: { type: "Erreur interne", msg: String(err), line: null } } });
+    self.postMessage({ type: "done", id: m.id, result: { ok: false, stdout: "", images: [], error: { type: lang === "en" ? "Internal error" : "Erreur interne", msg: String(err), line: null } } });
   }
 };

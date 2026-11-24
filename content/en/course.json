@@ -1,0 +1,12 @@
+{
+  "modules": [
+    { "id": "comprendre", "dir": "1-understanding", "icon": "🧠", "title": "Understanding programming", "desc": "What a computer really does, what an algorithm is and how a programmer thinks. Almost no code at first.", "badge": "Programmer's mindset" },
+    { "id": "premiers-pas", "dir": "2-first-steps", "icon": "🐍", "title": "First steps in Python", "desc": "Display, comment, read errors and store values in variables.", "badge": "Python beginner" },
+    { "id": "types", "dir": "3-types", "icon": "🔢", "title": "Numbers, text and booleans", "desc": "The basic data types: calculate, work with text, say true or false.", "badge": "Master of types" },
+    { "id": "logique", "dir": "4-logic", "icon": "🔀", "title": "Deciding and repeating", "desc": "Conditions and loops: the moment your program starts to think.", "badge": "Logician" },
+    { "id": "structures", "dir": "5-structures", "icon": "📦", "title": "Organizing your data", "desc": "Lists, dictionaries, tuples and sets: Python's data containers.", "badge": "Big tidy-up" },
+    { "id": "fonctions", "dir": "6-functions", "icon": "🧩", "title": "Functions, modules and files", "desc": "Write reusable code, use libraries and read files.", "badge": "Architect" },
+    { "id": "data", "dir": "7-data", "icon": "📊", "title": "Analyzing data", "desc": "NumPy, pandas and matplotlib on real data, all the way to the final project.", "badge": "Data analyst", "data": true }
+  ],
+  "pages": { "aide": "cheat-sheet.md" }
+}

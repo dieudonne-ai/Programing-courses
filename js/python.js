@@ -62,7 +62,7 @@
         timeout: true,
         stdout: "",
         images: [],
-        error: { type: "Temps dépassé", msg: "Ton programme tourne depuis plus de " + RUN_TIMEOUT / 1000 + " secondes. C'est souvent une boucle infinie (un while dont la condition ne devient jamais fausse).", line: null },
+        error: { type: I18N.t("pyTimeoutType"), msg: I18N.t("pyTimeout", { s: RUN_TIMEOUT / 1000 }), line: null },
       });
     });
     pending.clear();
@@ -77,12 +77,12 @@
   function send(msg, opts) {
     return ensure().then((ok) => {
       if (!ok) {
-        return { ok: false, stdout: "", images: [], error: { type: "Python indisponible", msg: "Impossible de charger Python. Vérifie ta connexion internet puis recharge la page.", line: null } };
+        return { ok: false, stdout: "", images: [], error: { type: I18N.t("pyUnavailableType"), msg: I18N.t("pyUnavailable"), line: null } };
       }
       const id = nextId++;
       return new Promise((resolve) => {
         pending.set(id, { resolve, onOut: opts.onOut, onStatus: opts.onStatus, timeout: opts.timeout || RUN_TIMEOUT });
-        worker.postMessage({ ...msg, id });
+        worker.postMessage({ ...msg, id, lang: I18N.lang });
       });
     });
   }
