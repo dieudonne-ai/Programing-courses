@@ -1,0 +1,12 @@
+{
+  "modules": [
+    { "id": "comprendre", "dir": "1-comprendre", "icon": "🧠", "title": "Comprendre la programmation", "desc": "Ce que fait vraiment un ordinateur, ce qu'est un algorithme et comment pense un programmeur. Sans écrire de code au début.", "badge": "Esprit de programmeur" },
+    { "id": "premiers-pas", "dir": "2-premiers-pas", "icon": "🐍", "title": "Premiers pas en Python", "desc": "Afficher, commenter, lire les erreurs et ranger des valeurs dans des variables.", "badge": "Pythonien débutant" },
+    { "id": "types", "dir": "3-types", "icon": "🔢", "title": "Nombres, textes et booléens", "desc": "Les types de données de base : calculer, manipuler du texte, dire vrai ou faux.", "badge": "Maître des types" },
+    { "id": "logique", "dir": "4-logique", "icon": "🔀", "title": "Décider et répéter", "desc": "Les conditions et les boucles : le moment où ton programme commence à réfléchir.", "badge": "Logicien" },
+    { "id": "structures", "dir": "5-structures", "icon": "📦", "title": "Ranger ses données", "desc": "Listes, dictionnaires, tuples et ensembles : les boîtes à données de Python.", "badge": "Grand rangement" },
+    { "id": "fonctions", "dir": "6-fonctions", "icon": "🧩", "title": "Fonctions, modules et fichiers", "desc": "Écrire du code réutilisable, utiliser les bibliothèques et lire des fichiers.", "badge": "Architecte" },
+    { "id": "data", "dir": "7-data", "icon": "📊", "title": "Analyser des données", "desc": "NumPy, pandas et matplotlib sur de vraies données, jusqu'au projet final.", "badge": "Analyste de données", "data": true }
+  ],
+  "pages": { "aide": "aide-memoire.md" }
+}
